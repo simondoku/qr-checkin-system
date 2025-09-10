@@ -622,36 +622,29 @@
         loading.style.display = "none";
       }
 
-      // Load members from Google Sheets - Updated for no-cors
+      // Load members from Google Sheets - Create a workaround for no-cors
       async function loadMembers() {
         if (!isConnected || !scriptUrl) {
           showStatus("Please establish connection first", "error");
           return;
         }
 
-        try {
-          // Use no-cors mode
-          await fetch(scriptUrl, {
-            method: "POST",
-            mode: "no-cors",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              action: "loadMembers",
-            }),
-          });
+        // Show instructions for manual import since we can't read the response
+        const instructions = `Since we can't automatically load due to browser restrictions, please:
 
-          // Since we can't read the response with no-cors, show instructions
-          showStatus(
-            "✅ Load request sent. Please manually add members using 'Add Local Member' or check your Google Sheet.",
-            "info"
-          );
+1. Open your Google Sheet
+2. Copy the data from your 'Members' sheet 
+3. Click 'Manual Sync' button
+4. Paste in format: ID,Name,Type (one per line)
 
-        } catch (error) {
-          console.error("Error loading members:", error);
-          showStatus(`❌ Failed to load members: ${error.message}`, "error");
-        }
+Example:
+12345,John Doe,Student
+67890,Jane Smith,Faculty
+
+This will import your Google Sheet members into the local system.`;
+
+        alert(instructions);
+        showStatus("📋 Please use Manual Sync to import members from Google Sheets", "info");
       }
 
       // Add a function to manually add members to local storage for testing
