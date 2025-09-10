@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Learning Center Check-in System</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 700px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 30px;
+        font-size: 2.5em;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .setup-section {
+        background: rgba(255, 107, 107, 0.1);
+        border: 2px solid rgba(255, 107, 107, 0.3);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 30px;
+      }
+
+      .setup-section.connected {
+        background: rgba(86, 171, 47, 0.1);
+        border-color: rgba(86, 171, 47, 0.3);
+      }
+
+      .setup-title {
+        font-size: 1.2em;
+        font-weight: 600;
+        margin-bottom: 15px;
+        color: #333;
+      }
+
+      .setup-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        font-size: 14px;
+      }
+
+      .setup-button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        margin-right: 10px;
+        margin-bottom: 10px;
+      }
+
+      .setup-button:hover {
+        background: #5a6fd8;
+      }
+
+      .connection-status {
+        padding: 10px;
+        border-radius: 6px;
+        margin-top: 10px;
+        font-weight: 600;
+      }
+
+      .status-disconnected {
+        background: rgba(255, 107, 107, 0.1);
+        color: #d32f2f;
+        border: 1px solid rgba(255, 107, 107, 0.3);
+      }
+
+      .status-connected {
+        background: rgba(86, 171, 47, 0.1);
+        color: #2e7d32;
+        border: 1px solid rgba(86, 171, 47, 0.3);
+      }
+
+      .main-system {
+        opacity: 0.5;
+        pointer-events: none;
+        transition: all 0.3s ease;
+      }
+
+      .main-system.enabled {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .scan-section {
+        margin-bottom: 30px;
+      }
+
+      .input-group {
+        position: relative;
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+        font-size: 1.1em;
+      }
+
+      input[type="text"],
+      select {
+        width: 100%;
+        padding: 15px 20px;
+        border: 2px solid #e0e0e0;
+        border-radius: 12px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.8);
+      }
+
+      input[type="text"]:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-2px);
+      }
+
+      .btn {
+        padding: 15px 30px;
+        border: none;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin: 5px;
+        min-width: 120px;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+      }
+
+      .btn-success {
+        background: linear-gradient(45deg, #56ab2f, #a8e6cf);
+        color: white;
+        box-shadow: 0 4px 15px rgba(86, 171, 47, 0.4);
+      }
+
+      .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(86, 171, 47, 0.6);
+      }
+
+      .btn-danger {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a52);
+        color: white;
+        box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+      }
+
+      .btn-danger:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255, 107, 107, 0.6);
+      }
+
+      .status {
+        padding: 20px;
+        border-radius: 12px;
+        margin: 20px 0;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1.1em;
+        opacity: 0;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+      }
+
+      .status.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      .status.success {
+        background: linear-gradient(
+          135deg,
+          rgba(86, 171, 47, 0.1),
+          rgba(168, 230, 207, 0.2)
+        );
+        color: #2d5016;
+        border: 2px solid rgba(86, 171, 47, 0.3);
+      }
+
+      .status.error {
+        background: linear-gradient(
+          135deg,
+          rgba(255, 107, 107, 0.1),
+          rgba(238, 90, 82, 0.2)
+        );
+        color: #8b1a1a;
+        border: 2px solid rgba(255, 107, 107, 0.3);
+      }
+
+      .status.info {
+        background: linear-gradient(
+          135deg,
+          rgba(102, 126, 234, 0.1),
+          rgba(118, 75, 162, 0.2)
+        );
+        color: #2c3e50;
+        border: 2px solid rgba(102, 126, 234, 0.3);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin: 20px 0;
+      }
+
+      .add-member-section {
+        background: rgba(255, 255, 255, 0.5);
+        padding: 25px;
+        border-radius: 15px;
+        margin-top: 30px;
+        border: 2px dashed #ccc;
+        display: none;
+      }
+
+      .add-member-section.show {
+        display: block;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .current-time {
+        text-align: center;
+        font-size: 1.2em;
+        color: #666;
+        margin-bottom: 20px;
+        padding: 10px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 10px;
+      }
+
+      .instructions {
+        background: rgba(102, 126, 234, 0.1);
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .instructions h3 {
+        color: #667eea;
+        margin-bottom: 10px;
+      }
+
+      .instructions ul {
+        color: #555;
+        padding-left: 20px;
+      }
+
+      .instructions li {
+        margin-bottom: 5px;
+      }
+
+      .recent-activity {
+        background: rgba(255, 255, 255, 0.7);
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      .activity-item {
+        padding: 8px 12px;
+        margin: 5px 0;
+        border-radius: 6px;
+        font-size: 0.9em;
+        border-left: 4px solid #667eea;
+        background: rgba(102, 126, 234, 0.05);
+      }
+
+      .activity-item.check-in {
+        border-left-color: #56ab2f;
+        background: rgba(86, 171, 47, 0.05);
+      }
+
+      .activity-item.check-out {
+        border-left-color: #ff6b6b;
+        background: rgba(255, 107, 107, 0.05);
+      }
+
+      .loading {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid rgba(102, 126, 234, 0.3);
+        border-radius: 50%;
+        border-top-color: #667eea;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>📚 Learning Center Check-in</h1>
+
+      <!-- Setup Section -->
+      <div class="setup-section" id="setupSection">
+        <div class="setup-title">🔧 System Setup</div>
+        <input
+          type="text"
+          id="scriptUrl"
+          class="setup-input"
+          placeholder="Paste your Google Apps Script Web App URL here"
+        />
+        <input
+          type="text"
+          id="sheetId"
+          class="setup-input"
+          placeholder="Paste your Google Sheet ID here"
+        />
+        <button class="setup-button" onclick="testConnection()">
+          <span id="testBtnText">Test Connection</span>
+          <div
+            class="loading"
+            id="testLoading"
+            style="display: none; margin-left: 10px"
+          ></div>
+        </button>
+        <button class="setup-button" onclick="loadMembers()">
+          Load Members
+        </button>
+        <button class="setup-button" onclick="addLocalMember()">
+          Add Local Member
+        </button>
+        <button class="setup-button" onclick="showCurrentMembers()">
+          Show Members
+        </button>
+        <button class="setup-button" onclick="clearAllMembers()">
+          Clear Members
+        </button>
+        <button class="setup-button" onclick="saveSettings()">
+          Save Settings
+        </button>
+        <div
+          class="connection-status status-disconnected"
+          id="connectionStatus"
+        >
+          ❌ Not Connected - Please configure Google Sheets integration
+        </div>
+      </div>
+
+      <!-- Main System -->
+      <div class="main-system" id="mainSystem">
+        <div class="current-time" id="currentTime"></div>
+
+        <div class="instructions">
+          <h3>How to Use:</h3>
+          <ul>
+            <li>Scan barcode or enter ID manually</li>
+            <li>Select Check-in or Check-out</li>
+            <li>For new non-members, click "Add Non-Member" first</li>
+            <li>All entries are logged with timestamps to Google Sheets</li>
+          </ul>
+        </div>
+
+        <div class="scan-section">
+          <div class="input-group">
+            <label for="barcodeInput">Scan Barcode or Enter ID:</label>
+            <input
+              type="text"
+              id="barcodeInput"
+              placeholder="Scan or type member/non-member ID"
+              autofocus
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="locationSelect">Location:</label>
+            <select id="locationSelect">
+              <option value="Learning Center">Learning Center</option>
+              <option value="Resource Center">Resource Center</option>
+            </select>
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-success" onclick="checkIn()">
+              ✅ Check In
+            </button>
+            <button class="btn btn-danger" onclick="checkOut()">
+              ❌ Check Out
+            </button>
+            <button class="btn btn-primary" onclick="toggleAddMember()">
+              ➕ Add Non-Member
+            </button>
+          </div>
+        </div>
+
+        <div class="add-member-section" id="addMemberSection">
+          <h3>Add New Non-Member</h3>
+          <div class="input-group">
+            <label for="newMemberName">Full Name:</label>
+            <input
+              type="text"
+              id="newMemberName"
+              placeholder="Enter full name"
+            />
+          </div>
+          <div class="input-group">
+            <label for="newMemberId">ID Number:</label>
+            <input
+              type="text"
+              id="newMemberId"
+              placeholder="Enter or scan ID number"
+            />
+          </div>
+          <div class="button-group">
+            <button class="btn btn-success" onclick="addNonMember()">
+              Add Non-Member
+            </button>
+            <button class="btn btn-primary" onclick="toggleAddMember()">
+              Cancel
+            </button>
+          </div>
+        </div>
+
+        <div class="recent-activity" id="recentActivity">
+          <h3>Recent Activity</h3>
+          <div id="activityList">
+            <div class="activity-item">
+              System ready - waiting for first check-in
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="status" id="statusMessage"></div>
+    </div>
+
+    <script>
+      // Global variables
+      let members = {};
+      let nonMembers = {};
+      let scriptUrl = "";
+      let sheetId = "";
+      let isConnected = false;
+
+      // Update connection status UI
+      function updateConnectionStatus(connected) {
+        const setupSection = document.getElementById("setupSection");
+        const connectionStatus = document.getElementById("connectionStatus");
+        const mainSystem = document.getElementById("mainSystem");
+
+        if (connected) {
+          setupSection.classList.add("connected");
+          connectionStatus.className = "connection-status status-connected";
+          connectionStatus.textContent = "✅ Connected to Google Sheets";
+          mainSystem.classList.add("enabled");
+        } else {
+          setupSection.classList.remove("connected");
+          connectionStatus.className = "connection-status status-disconnected";
+          connectionStatus.textContent =
+            "❌ Not Connected - Please configure Google Sheets integration";
+          mainSystem.classList.remove("enabled");
+        }
+      }
+
+      // Load saved settings
+      function loadSettings() {
+        const savedUrl = localStorage.getItem("scriptUrl");
+        const savedSheetId = localStorage.getItem("sheetId");
+        const savedMembers = localStorage.getItem("members");
+        const savedNonMembers = localStorage.getItem("nonMembers");
+
+        if (savedUrl) {
+          document.getElementById("scriptUrl").value = savedUrl;
+          scriptUrl = savedUrl;
+        }
+        if (savedSheetId) {
+          document.getElementById("sheetId").value = savedSheetId;
+          sheetId = savedSheetId;
+        }
+        if (savedMembers) {
+          try {
+            members = JSON.parse(savedMembers);
+          } catch (e) {
+            console.error("Error loading members:", e);
+          }
+        }
+        if (savedNonMembers) {
+          try {
+            nonMembers = JSON.parse(savedNonMembers);
+          } catch (e) {
+            console.error("Error loading non-members:", e);
+          }
+        }
+
+        // Test connection if URL exists
+        if (savedUrl) {
+          setTimeout(testConnection, 1000);
+        }
+      }
+
+      // Save settings
+      function saveSettings() {
+        scriptUrl = document.getElementById("scriptUrl").value.trim();
+        sheetId = document.getElementById("sheetId").value.trim();
+
+        localStorage.setItem("scriptUrl", scriptUrl);
+        localStorage.setItem("sheetId", sheetId);
+        localStorage.setItem("members", JSON.stringify(members));
+        localStorage.setItem("nonMembers", JSON.stringify(nonMembers));
+
+        showStatus("Settings saved successfully!", "success");
+      }
+
+      // Test connection to Google Sheets
+      async function testConnection() {
+        const url = document.getElementById("scriptUrl").value.trim();
+        if (!url) {
+          showStatus("Please enter your Google Apps Script URL first", "error");
+          return;
+        }
+
+        const testBtn = document.getElementById("testBtnText");
+        const loading = document.getElementById("testLoading");
+
+        testBtn.textContent = "Testing...";
+        loading.style.display = "inline-block";
+
+        try {
+          // Use normal fetch since we're on HTTPS now
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "test",
+              timestamp: new Date().toISOString(),
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              isConnected = true;
+              scriptUrl = url;
+              updateConnectionStatus(true);
+              showStatus("✅ Connection successful!", "success");
+              saveSettings();
+            } else {
+              isConnected = false;
+              updateConnectionStatus(false);
+              showStatus(`❌ Connection failed: ${data.error}`, "error");
+            }
+          } else {
+            isConnected = false;
+            updateConnectionStatus(false);
+            showStatus("❌ Connection failed: Server error", "error");
+          }
+        } catch (error) {
+          console.error("Connection test failed:", error);
+          isConnected = false;
+          updateConnectionStatus(false);
+          showStatus(`❌ Connection failed: ${error.message}`, "error");
+        }
+
+        testBtn.textContent = "Test Connection";
+        loading.style.display = "none";
+      }
+
+      // Load members from Google Sheets - Updated for HTTPS
+      async function loadMembers() {
+        if (!isConnected || !scriptUrl) {
+          showStatus("Please establish connection first", "error");
+          return;
+        }
+
+        try {
+          // Now we can use normal fetch since we're on HTTPS
+          const response = await fetch(scriptUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              action: "loadMembers",
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+              members = data.members || {};
+              nonMembers = data.nonMembers || {};
+              saveSettings();
+              
+              const memberCount = Object.keys(members).length;
+              const nonMemberCount = Object.keys(nonMembers).length;
+              
+              showStatus(
+                `✅ Loaded ${memberCount} members and ${nonMemberCount} non-members from Google Sheets`,
+                "success"
+              );
+            } else {
+              showStatus(`❌ Error loading members: ${data.error}`, "error");
+            }
+          } else {
+            showStatus("❌ Failed to load members from Google Sheets", "error");
+          }
+        } catch (error) {
+          console.error("Error loading members:", error);
+          showStatus(`❌ Failed to load members: ${error.message}`, "error");
+        }
+      }
+
+      // Add a function to manually add members to local storage for testing
+      function addTestMember() {
+        const id = prompt("Enter member ID:");
+        const name = prompt("Enter member name:");
+        if (id && name) {
+          members[id] = {
+            name: name,
+            type: "Member",
+          };
+          saveSettings();
+          showStatus(`✅ Test member ${name} (${id}) added locally`, "success");
+        }
+      }
+
+      // Add local member function
+      function addLocalMember() {
+        const id = prompt("Enter member ID:");
+        const name = prompt("Enter member name:");
+        const type = prompt("Enter member type (Member/Student/Faculty):", "Member");
+        
+        if (id && name) {
+          if (members[id] || nonMembers[id]) {
+            showStatus(`❌ ID ${id} already exists`, "error");
+            return;
+          }
+          
+          members[id] = {
+            name: name,
+            type: type || "Member",
+          };
+          saveSettings();
+          showStatus(`✅ Member ${name} (${id}) added locally`, "success");
+        } else {
+          showStatus("❌ Please provide both ID and name", "error");
+        }
+      }
+
+      // Show current members function
+      function showCurrentMembers() {
+        const memberCount = Object.keys(members).length;
+        const nonMemberCount = Object.keys(nonMembers).length;
+        
+        let message = `📊 Current Database:\n\n`;
+        message += `Members: ${memberCount}\n`;
+        message += `Non-Members: ${nonMemberCount}\n\n`;
+        
+        if (memberCount > 0) {
+          message += "MEMBERS:\n";
+          for (const [id, data] of Object.entries(members)) {
+            message += `• ${data.name} (ID: ${id}) - ${data.type}\n`;
+          }
+          message += "\n";
+        }
+        
+        if (nonMemberCount > 0) {
+          message += "NON-MEMBERS:\n";
+          for (const [id, data] of Object.entries(nonMembers)) {
+            message += `• ${data.name} (ID: ${id}) - ${data.type}\n`;
+          }
+        }
+        
+        if (memberCount === 0 && nonMemberCount === 0) {
+          message += "No members or non-members found.\nUse 'Add Local Member' to add members manually.";
+        }
+        
+        alert(message);
+      }
+
+      // Clear all members function
+      function clearAllMembers() {
+        if (confirm("⚠️ Are you sure you want to clear ALL members and non-members?\n\nThis action cannot be undone.")) {
+          members = {};
+          nonMembers = {};
+          saveSettings();
+          showStatus("🗑️ All members and non-members cleared", "info");
+        }
+      }
+
+      // Send data to Google Sheets - Updated for HTTPS
+      async function sendToGoogleSheets(data) {
+        if (!isConnected || !scriptUrl) {
+          showStatus("❌ Not connected to Google Sheets", "error");
+          return false;
+        }
+
+        try {
+          const response = await fetch(scriptUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            return result.success;
+          } else {
+            showStatus("❌ Failed to save to Google Sheets", "error");
+            return false;
+          }
+        } catch (error) {
+          console.error("Error sending to Google Sheets:", error);
+          showStatus(
+            `❌ Failed to save to Google Sheets: ${error.message}`,
+            "error"
+          );
+          return false;
+        }
+      }
+
+      // Update current time
+      function updateTime() {
+        const now = new Date();
+        const timeString = now.toLocaleString("en-US", {
+          weekday: "long",
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+        });
+        document.getElementById("currentTime").textContent = timeString;
+      }
+
+      // Update time every second
+      setInterval(updateTime, 1000);
+      updateTime();
+
+      function showStatus(message, type) {
+        const statusDiv = document.getElementById("statusMessage");
+        statusDiv.textContent = message;
+        statusDiv.className = `status ${type} show`;
+
+        setTimeout(() => {
+          statusDiv.classList.remove("show");
+        }, 5000);
+      }
+
+      function addToActivity(message, type) {
+        const activityList = document.getElementById("activityList");
+        const item = document.createElement("div");
+        item.className = `activity-item ${type}`;
+        item.textContent = message;
+
+        // Add to top of list
+        activityList.insertBefore(item, activityList.firstChild);
+
+        // Keep only last 10 items
+        while (activityList.children.length > 10) {
+          activityList.removeChild(activityList.lastChild);
+        }
+      }
+
+      function findUser(id) {
+        if (members[id]) {
+          return { ...members[id], id: id };
+        }
+        if (nonMembers[id]) {
+          return { ...nonMembers[id], id: id };
+        }
+        return null;
+      }
+
+      async function checkIn() {
+        const id = document.getElementById("barcodeInput").value.trim();
+        const location = document.getElementById("locationSelect").value;
+
+        if (!id) {
+          showStatus("Please enter or scan an ID", "error");
+          return;
+        }
+
+        const user = findUser(id);
+        if (!user) {
+          showStatus(
+            `ID ${id} not found. Please add as non-member first.`,
+            "error"
+          );
+          return;
+        }
+
+        const timestamp = new Date();
+        const logEntry = {
+          action: "checkin",
+          id: id,
+          name: user.name,
+          type: user.type,
+          actionType: "Check In",
+          location: location,
+          timestamp: timestamp.toISOString(),
+        };
+
+        const success = await sendToGoogleSheets(logEntry);
+        if (success) {
+          const displayTime = timestamp.toLocaleString();
+          showStatus(`✅ ${user.name} checked in to ${location}`, "success");
+          addToActivity(
+            `${user.name} checked in to ${location} at ${displayTime}`,
+            "check-in"
+          );
+          document.getElementById("barcodeInput").value = "";
+          document.getElementById("barcodeInput").focus();
+        }
+      }
+
+      async function checkOut() {
+        const id = document.getElementById("barcodeInput").value.trim();
+        const location = document.getElementById("locationSelect").value;
+
+        if (!id) {
+          showStatus("Please enter or scan an ID", "error");
+          return;
+        }
+
+        const user = findUser(id);
+        if (!user) {
+          showStatus(`ID ${id} not found.`, "error");
+          return;
+        }
+
+        const timestamp = new Date();
+        const logEntry = {
+          action: "checkout",
+          id: id,
+          name: user.name,
+          type: user.type,
+          actionType: "Check Out",
+          location: location,
+          timestamp: timestamp.toISOString(),
+        };
+
+        const success = await sendToGoogleSheets(logEntry);
+        if (success) {
+          const displayTime = timestamp.toLocaleString();
+          showStatus(`❌ ${user.name} checked out from ${location}`, "info");
+          addToActivity(
+            `${user.name} checked out from ${location} at ${displayTime}`,
+            "check-out"
+          );
+          document.getElementById("barcodeInput").value = "";
+          document.getElementById("barcodeInput").focus();
+        }
+      }
+
+      function toggleAddMember() {
+        const section = document.getElementById("addMemberSection");
+        section.classList.toggle("show");
+
+        if (section.classList.contains("show")) {
+          document.getElementById("newMemberName").focus();
+        }
+      }
+
+      async function addNonMember() {
+        const name = document.getElementById("newMemberName").value.trim();
+        const id = document.getElementById("newMemberId").value.trim();
+
+        if (!name || !id) {
+          showStatus("Please enter both name and ID", "error");
+          return;
+        }
+
+        if (members[id] || nonMembers[id]) {
+          showStatus(`ID ${id} already exists`, "error");
+          return;
+        }
+
+        const memberData = {
+          action: "addNonMember",
+          id: id,
+          name: name,
+          type: "Non-Member",
+        };
+
+        const success = await sendToGoogleSheets(memberData);
+        if (success) {
+          nonMembers[id] = {
+            name: name,
+            type: "Non-Member",
+          };
+
+          saveSettings();
+          showStatus(
+            `✅ Non-member ${name} (ID: ${id}) added successfully`,
+            "success"
+          );
+          addToActivity(`Added non-member: ${name} (${id})`, "");
+
+          // Clear form and hide section
+          document.getElementById("newMemberName").value = "";
+          document.getElementById("newMemberId").value = "";
+          document.getElementById("addMemberSection").classList.remove("show");
+          document.getElementById("barcodeInput").focus();
+        }
+      }
+
+      // Handle barcode scanner input
+      document
+        .getElementById("barcodeInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            // Auto check-in when barcode is scanned (Enter is pressed)
+            checkIn();
+          }
+        });
+
+      // Initialize system on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        loadSettings();
+        document.getElementById("barcodeInput").focus();
+
+        // Auto-focus barcode input every 30 seconds
+        setInterval(() => {
+          if (
+            !document.querySelector("input:focus") &&
+            !document
+              .getElementById("addMemberSection")
+              .classList.contains("show")
+          ) {
+            document.getElementById("barcodeInput").focus();
+          }
+        }, 30000);
+      });
+    </script>
+  </body>
+</html>
