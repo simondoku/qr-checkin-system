@@ -665,27 +665,40 @@
         }
       }
 
-      // Add local member function
+      // Add local member function - Updated to sync with Google Sheets
       function addLocalMember() {
         const id = prompt("Enter member ID:");
         const name = prompt("Enter member name:");
-        const type = prompt(
-          "Enter member type (Member/Student/Faculty):",
-          "Member"
-        );
-
+        const type = prompt("Enter member type (Member/Student/Faculty):", "Member");
+        
         if (id && name) {
           if (members[id] || nonMembers[id]) {
             showStatus(`❌ ID ${id} already exists`, "error");
             return;
           }
-
+          
+          // Add to local storage first
           members[id] = {
             name: name,
             type: type || "Member",
           };
           saveSettings();
-          showStatus(`✅ Member ${name} (${id}) added locally`, "success");
+          
+          // Also send to Google Sheets Members sheet
+          const memberData = {
+            action: "addMember",
+            id: id,
+            name: name,
+            type: type || "Member",
+          };
+          
+          sendToGoogleSheets(memberData).then(success => {
+            if (success) {
+              showStatus(`✅ Member ${name} (${id}) added locally and to Google Sheets`, "success");
+            } else {
+              showStatus(`✅ Member ${name} (${id}) added locally (Google Sheets sync may have failed)`, "info");
+            }
+          });
         } else {
           showStatus("❌ Please provide both ID and name", "error");
         }
@@ -951,6 +964,37 @@
           document.getElementById("newMemberId").value = "";
           document.getElementById("addMemberSection").classList.remove("show");
           document.getElementById("barcodeInput").focus();
+        }
+      }
+
+      // Add function to manually sync members from Google Sheets
+      function manualSyncMembers() {
+        const membersList = prompt("Enter member data in format: ID,Name,Type (one per line, separated by newlines):\n\nExample:\n12345,John Doe,Student\n67890,Jane Smith,Faculty");
+        
+        if (!membersList) return;
+        
+        const lines = membersList.split('\n');
+        let addedCount = 0;
+        
+        for (const line of lines) {
+          const parts = line.trim().split(',');
+          if (parts.length >= 2) {
+            const id = parts[0].trim();
+            const name = parts[1].trim();
+            const type = parts[2] ? parts[2].trim() : 'Member';
+            
+            if (id && name && !members[id] && !nonMembers[id]) {
+              members[id] = { name, type };
+              addedCount++;
+            }
+          }
+        }
+        
+        if (addedCount > 0) {
+          saveSettings();
+          showStatus(`✅ Added ${addedCount} members manually`, "success");
+        } else {
+          showStatus("❌ No valid members added", "error");
         }
       }
 
