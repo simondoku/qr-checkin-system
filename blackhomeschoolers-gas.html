@@ -351,23 +351,43 @@
         <div class="instructions">
           <h3>Welcome! Here's how to check in:</h3>
           <ul>
-            <li>📱 Scan your barcode or type your ID below</li>
+            <li>
+              📱 <strong>With ID Card:</strong> Members, Non-Members,
+              Facilitators - Scan your barcode or type your ID
+            </li>
+            <li>
+              👥 <strong>No ID Card:</strong> Visitors & Visiting Facilitators -
+              Click "Add Person" to register first
+            </li>
             <li>
               🏢 Choose your location (Learning Center or Resource Center)
             </li>
             <li>✅ Click Check In when you arrive, Check Out when you leave</li>
-            <li>👥 New visitors? Click "Add Visitor" first</li>
           </ul>
         </div>
 
         <div class="scan-section">
           <div class="input-group">
-            <label for="barcodeInput">🔍 Your ID Number:</label>
+            <label for="barcodeInput"
+              >🔍 Your ID Number (if you have an ID card):</label
+            >
             <input
               type="text"
               id="barcodeInput"
-              placeholder="Scan barcode or type your ID number"
+              placeholder="Scan barcode or type your ID number (Members/Non-Members/Facilitators only)"
               autofocus
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="nameInput" style="display: none"
+              >👤 Your Name (if no ID card):</label
+            >
+            <input
+              type="text"
+              id="nameInput"
+              placeholder="Enter your full name (Visitors/Visiting Facilitators)"
+              style="display: none"
             />
           </div>
 
@@ -387,32 +407,50 @@
               🚪 Check Out
             </button>
             <button class="btn btn-primary" onclick="toggleAddMember()">
-              👥 Add Visitor
+              👥 Add Person
+            </button>
+            <button
+              class="btn btn-primary"
+              onclick="toggleInputMode()"
+              id="toggleModeBtn"
+            >
+              🔄 Switch to Name Entry
             </button>
           </div>
         </div>
 
         <div class="add-member-section" id="addMemberSection">
-          <h3>👥 Add New Visitor</h3>
+          <h3>👥 Add New Person</h3>
+          <div class="input-group">
+            <label for="personType">Person Type:</label>
+            <select id="personType" onchange="updateAddPersonForm()">
+              <option value="Non-Member">Non-Member (has ID card)</option>
+              <option value="Facilitator">Facilitator (has ID card)</option>
+              <option value="Visitor">Visitor (no ID card)</option>
+              <option value="Visiting Facilitator">
+                Visiting Facilitator (no ID card)
+              </option>
+            </select>
+          </div>
           <div class="input-group">
             <label for="newMemberName">Full Name:</label>
             <input
               type="text"
               id="newMemberName"
-              placeholder="Enter visitor's full name"
+              placeholder="Enter person's full name"
             />
           </div>
-          <div class="input-group">
-            <label for="newMemberId">ID Number:</label>
+          <div class="input-group" id="idCardGroup">
+            <label for="newMemberId">ID Card Number:</label>
             <input
               type="text"
               id="newMemberId"
-              placeholder="Enter or scan visitor's ID number"
+              placeholder="Enter or scan ID card number"
             />
           </div>
           <div class="button-group">
-            <button class="btn btn-success" onclick="addNonMember()">
-              Add Visitor
+            <button class="btn btn-success" onclick="addPerson()">
+              Add Person
             </button>
             <button class="btn btn-primary" onclick="toggleAddMember()">
               Cancel
@@ -506,6 +544,191 @@
           return { ...nonMembers[id], id: id };
         }
         return null;
+      }
+
+      // Helper function to find user by name (for visitors/visiting facilitators)
+      function findUserByName(name) {
+        const lowerName = name.toLowerCase();
+
+        // Search in nonMembers for visitors and visiting facilitators
+        for (const [id, data] of Object.entries(nonMembers)) {
+          if (data.name.toLowerCase() === lowerName) {
+            return { ...data, id: id };
+          }
+        }
+
+        return null;
+      }
+
+      // Process check-in logic
+      function processCheckIn(name, type, location, identifier) {
+        const timestamp = new Date();
+        const logEntry = {
+          id: identifier,
+          name: name,
+          type: type,
+          actionType: "Check In",
+          location: location,
+          timestamp: timestamp.toISOString(),
+        };
+
+        google.script.run
+          .withSuccessHandler(function (response) {
+            if (response.success) {
+              const displayTime = timestamp.toLocaleString();
+              showStatus(`✅ ${name} checked in to ${location}`, "success");
+              addToActivity(
+                `${name} (${type}) checked in to ${location} at ${displayTime}`,
+                "check-in"
+              );
+
+              // Clear inputs
+              document.getElementById("barcodeInput").value = "";
+              document.getElementById("nameInput").value = "";
+
+              // Focus appropriate input
+              if (
+                document.getElementById("barcodeInput").style.display !== "none"
+              ) {
+                document.getElementById("barcodeInput").focus();
+              } else {
+                document.getElementById("nameInput").focus();
+              }
+            } else {
+              showStatus(`❌ Check-in failed: ${response.error}`, "error");
+            }
+          })
+          .withFailureHandler(function (error) {
+            showStatus(`❌ Check-in failed: ${error.message}`, "error");
+          })
+          .handleCheckInOut(logEntry);
+      }
+
+      // Process check-out logic
+      function processCheckOut(name, type, location, identifier) {
+        const timestamp = new Date();
+        const logEntry = {
+          id: identifier,
+          name: name,
+          type: type,
+          actionType: "Check Out",
+          location: location,
+          timestamp: timestamp.toISOString(),
+        };
+
+        google.script.run
+          .withSuccessHandler(function (response) {
+            if (response.success) {
+              const displayTime = timestamp.toLocaleString();
+              showStatus(`🚪 ${name} checked out from ${location}`, "info");
+              addToActivity(
+                `${name} (${type}) checked out from ${location} at ${displayTime}`,
+                "check-out"
+              );
+
+              // Clear inputs
+              document.getElementById("barcodeInput").value = "";
+              document.getElementById("nameInput").value = "";
+
+              // Focus appropriate input
+              if (
+                document.getElementById("barcodeInput").style.display !== "none"
+              ) {
+                document.getElementById("barcodeInput").focus();
+              } else {
+                document.getElementById("nameInput").focus();
+              }
+            } else {
+              showStatus(`❌ Check-out failed: ${response.error}`, "error");
+            }
+          })
+          .withFailureHandler(function (error) {
+            showStatus(`❌ Check-out failed: ${error.message}`, "error");
+          })
+          .handleCheckInOut(logEntry);
+      }
+
+      // Enhanced check-in function to handle both ID cards and name entry
+      function checkIn() {
+        const id = document.getElementById("barcodeInput").value.trim();
+        const nameOnly = document.getElementById("nameInput").value.trim();
+        const location = document.getElementById("locationSelect").value;
+
+        // Determine if using ID or name
+        if (document.getElementById("barcodeInput").style.display !== "none") {
+          // ID Card mode
+          if (!id) {
+            showStatus("Please enter or scan an ID", "error");
+            return;
+          }
+
+          const user = findUser(id);
+          if (!user) {
+            showStatus(
+              `ID ${id} not found. Please add this person first.`,
+              "error"
+            );
+            return;
+          }
+
+          processCheckIn(user.name, user.type, location, id);
+        } else {
+          // Name entry mode for visitors/visiting facilitators
+          if (!nameOnly) {
+            showStatus("Please enter your full name", "error");
+            return;
+          }
+
+          // Find user by name in visitors/visiting facilitators
+          const user = findUserByName(nameOnly);
+          if (!user) {
+            showStatus(
+              `${nameOnly} not found. Please use "Add Person" to register first.`,
+              "error"
+            );
+            return;
+          }
+
+          processCheckIn(user.name, user.type, location, user.id || nameOnly);
+        }
+      }
+
+      // Enhanced check-out function to handle both ID cards and name entry
+      function checkOut() {
+        const id = document.getElementById("barcodeInput").value.trim();
+        const nameOnly = document.getElementById("nameInput").value.trim();
+        const location = document.getElementById("locationSelect").value;
+
+        // Determine if using ID or name
+        if (document.getElementById("barcodeInput").style.display !== "none") {
+          // ID Card mode
+          if (!id) {
+            showStatus("Please enter or scan an ID", "error");
+            return;
+          }
+
+          const user = findUser(id);
+          if (!user) {
+            showStatus(`ID ${id} not found.`, "error");
+            return;
+          }
+
+          processCheckOut(user.name, user.type, location, id);
+        } else {
+          // Name entry mode for visitors/visiting facilitators
+          if (!nameOnly) {
+            showStatus("Please enter your full name", "error");
+            return;
+          }
+
+          const user = findUserByName(nameOnly);
+          if (!user) {
+            showStatus(`${nameOnly} not found.`, "error");
+            return;
+          }
+
+          processCheckOut(user.name, user.type, location, user.id || nameOnly);
+        }
       }
 
       // Load members from Google Sheets using server-side function
@@ -629,109 +852,6 @@
         adminSection.classList.toggle("show");
       }
 
-      // Check In function using server-side call
-      function checkIn() {
-        const id = document.getElementById("barcodeInput").value.trim();
-        const location = document.getElementById("locationSelect").value;
-
-        if (!id) {
-          showStatus("Please enter or scan an ID", "error");
-          return;
-        }
-
-        const user = findUser(id);
-        if (!user) {
-          showStatus(
-            `ID ${id} not found. Please add as visitor first.`,
-            "error"
-          );
-          return;
-        }
-
-        const timestamp = new Date();
-        const logEntry = {
-          id: id,
-          name: user.name,
-          type: user.type,
-          actionType: "Check In",
-          location: location,
-          timestamp: timestamp.toISOString(),
-        };
-
-        google.script.run
-          .withSuccessHandler(function (response) {
-            if (response.success) {
-              const displayTime = timestamp.toLocaleString();
-              showStatus(
-                `✅ ${user.name} checked in to ${location}`,
-                "success"
-              );
-              addToActivity(
-                `${user.name} checked in to ${location} at ${displayTime}`,
-                "check-in"
-              );
-              document.getElementById("barcodeInput").value = "";
-              document.getElementById("barcodeInput").focus();
-            } else {
-              showStatus(`❌ Check-in failed: ${response.error}`, "error");
-            }
-          })
-          .withFailureHandler(function (error) {
-            showStatus(`❌ Check-in failed: ${error.message}`, "error");
-          })
-          .handleCheckInOut(logEntry);
-      }
-
-      // Check Out function using server-side call
-      function checkOut() {
-        const id = document.getElementById("barcodeInput").value.trim();
-        const location = document.getElementById("locationSelect").value;
-
-        if (!id) {
-          showStatus("Please enter or scan an ID", "error");
-          return;
-        }
-
-        const user = findUser(id);
-        if (!user) {
-          showStatus(`ID ${id} not found.`, "error");
-          return;
-        }
-
-        const timestamp = new Date();
-        const logEntry = {
-          id: id,
-          name: user.name,
-          type: user.type,
-          actionType: "Check Out",
-          location: location,
-          timestamp: timestamp.toISOString(),
-        };
-
-        google.script.run
-          .withSuccessHandler(function (response) {
-            if (response.success) {
-              const displayTime = timestamp.toLocaleString();
-              showStatus(
-                `🚪 ${user.name} checked out from ${location}`,
-                "info"
-              );
-              addToActivity(
-                `${user.name} checked out from ${location} at ${displayTime}`,
-                "check-out"
-              );
-              document.getElementById("barcodeInput").value = "";
-              document.getElementById("barcodeInput").focus();
-            } else {
-              showStatus(`❌ Check-out failed: ${response.error}`, "error");
-            }
-          })
-          .withFailureHandler(function (error) {
-            showStatus(`❌ Check-out failed: ${error.message}`, "error");
-          })
-          .handleCheckInOut(logEntry);
-      }
-
       function toggleAddMember() {
         const section = document.getElementById("addMemberSection");
         section.classList.toggle("show");
@@ -796,6 +916,221 @@
           if (e.key === "Enter") {
             e.preventDefault();
             checkIn();
+          }
+        });
+
+      // Toggle between ID scanning and name entry modes
+      function toggleInputMode() {
+        const barcodeInput = document.getElementById("barcodeInput");
+        const nameInput = document.getElementById("nameInput");
+        const barcodeLabel = document.querySelector(
+          'label[for="barcodeInput"]'
+        );
+        const nameLabel = document.querySelector('label[for="nameInput"]');
+        const toggleModeBtn = document.getElementById("toggleModeBtn");
+
+        if (barcodeInput.style.display === "none") {
+          // Switch to ID mode
+          barcodeInput.style.display = "block";
+          barcodeLabel.style.display = "block";
+          nameInput.style.display = "none";
+          nameLabel.style.display = "none";
+          toggleModeBtn.textContent = "🔄 Switch to Name Entry";
+          barcodeInput.focus();
+        } else {
+          // Switch to name mode
+          barcodeInput.style.display = "none";
+          barcodeLabel.style.display = "none";
+          nameInput.style.display = "block";
+          nameLabel.style.display = "block";
+          toggleModeBtn.textContent = "🔄 Switch to ID Entry";
+          nameInput.focus();
+        }
+      }
+
+      // Update Add Person form based on selected person type
+      function updateAddPersonForm() {
+        const personType = document.getElementById("personType").value;
+        const idCardGroup = document.getElementById("idCardGroup");
+
+        if (personType === "Visitor" || personType === "Visiting Facilitator") {
+          idCardGroup.style.display = "none";
+        } else {
+          idCardGroup.style.display = "block";
+        }
+      }
+
+      // Add Person function using server-side call
+      function addPerson() {
+        const name = document.getElementById("newMemberName").value.trim();
+        const id = document.getElementById("newMemberId").value.trim();
+        const personType = document.getElementById("personType").value;
+
+        if (!name) {
+          showStatus("Please enter a name", "error");
+          return;
+        }
+
+        // Check if ID is required for this person type
+        if (
+          (personType === "Non-Member" || personType === "Facilitator") &&
+          !id
+        ) {
+          showStatus("Please enter an ID card number", "error");
+          return;
+        }
+
+        // For visitors/visiting facilitators, generate a unique ID if none provided
+        let finalId = id;
+        if (personType === "Visitor" || personType === "Visiting Facilitator") {
+          if (!id) {
+            // Generate unique ID based on name and timestamp
+            finalId = name.replace(/\s+/g, "").toLowerCase() + "_" + Date.now();
+          }
+        }
+
+        if (finalId && (members[finalId] || nonMembers[finalId])) {
+          showStatus(`ID ${finalId} already exists`, "error");
+          return;
+        }
+
+        const memberData = {
+          id: finalId,
+          name: name,
+          type: personType,
+        };
+
+        // FIXED: Determine which server function to call based on person type
+        let serverFunction;
+        if (personType === "Member" || personType === "Facilitator") {
+          serverFunction = "addMember";
+        } else {
+          serverFunction = "addNonMember";
+        }
+
+        google.script.run
+          .withSuccessHandler(function (response) {
+            if (response.success) {
+              if (personType === "Member" || personType === "Facilitator") {
+                members[finalId] = { name: name, type: personType };
+              } else {
+                nonMembers[finalId] = { name: name, type: personType };
+              }
+
+              showStatus(
+                `✅ ${personType} ${name} added successfully`,
+                "success"
+              );
+              addToActivity(
+                `Added ${personType.toLowerCase()}: ${name}${
+                  finalId ? ` (${finalId})` : ""
+                }`,
+                ""
+              );
+
+              // Clear form and hide section
+              document.getElementById("newMemberName").value = "";
+              document.getElementById("newMemberId").value = "";
+              document
+                .getElementById("addMemberSection")
+                .classList.remove("show");
+
+              // Focus appropriate input based on current mode
+              if (
+                document.getElementById("barcodeInput").style.display !== "none"
+              ) {
+                document.getElementById("barcodeInput").focus();
+              } else {
+                document.getElementById("nameInput").focus();
+              }
+            } else {
+              showStatus(
+                `❌ Error adding ${personType.toLowerCase()}: ${
+                  response.error
+                }`,
+                "error"
+              );
+            }
+          })
+          .withFailureHandler(function (error) {
+            showStatus(
+              `❌ Failed to add ${personType.toLowerCase()}: ${error.message}`,
+              "error"
+            );
+          })
+          [serverFunction](memberData);
+      }
+
+      // Enhanced barcode scanner detection and handling
+      let scanBuffer = "";
+      let scanTimeout;
+      const SCAN_THRESHOLD = 3; // Minimum characters for barcode
+      const SCAN_TIMEOUT = 100; // Milliseconds between characters for scanner detection
+
+      // Handle barcode scanner input with enhanced detection
+      document
+        .getElementById("barcodeInput")
+        .addEventListener("input", function (e) {
+          const currentTime = Date.now();
+
+          // Clear any existing timeout
+          clearTimeout(scanTimeout);
+
+          // Add character to buffer
+          scanBuffer += e.target.value.slice(-1);
+
+          // Set timeout to process the scan
+          scanTimeout = setTimeout(() => {
+            if (scanBuffer.length >= SCAN_THRESHOLD) {
+              // This looks like a barcode scan (multiple characters entered quickly)
+              e.target.value = scanBuffer;
+              scanBuffer = "";
+
+              // Auto-trigger check-in after short delay for barcode scans
+              setTimeout(() => {
+                if (e.target.value.trim()) {
+                  checkIn();
+                }
+              }, 200);
+            } else {
+              // Reset buffer for manual typing
+              scanBuffer = "";
+            }
+          }, SCAN_TIMEOUT);
+        });
+
+      // Enhanced keypress handler for Enter key and scanner suffix characters
+      document
+        .getElementById("barcodeInput")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter" || e.key === "Tab") {
+            e.preventDefault();
+            clearTimeout(scanTimeout);
+            scanBuffer = "";
+
+            if (this.value.trim()) {
+              checkIn();
+            }
+          }
+        });
+
+      // Handle barcode scanner suffix characters (some scanners send these)
+      document
+        .getElementById("barcodeInput")
+        .addEventListener("keydown", function (e) {
+          // Some scanners send these special keys after the barcode
+          if (
+            e.code === "NumpadEnter" ||
+            e.code === "Tab" ||
+            e.code === "Enter"
+          ) {
+            e.preventDefault();
+            clearTimeout(scanTimeout);
+            scanBuffer = "";
+
+            if (this.value.trim()) {
+              setTimeout(() => checkIn(), 100);
+            }
           }
         });
     </script>
